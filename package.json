@@ -1,6 +1,7 @@
 {
   "name": "honest-voices",
   "version": "1.0.0",
+  "type": "commonjs",
   "description": "A platform for honest messages and reflection",
   "main": "server.js",
   "scripts": {
