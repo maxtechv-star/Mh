@@ -7,22 +7,22 @@ const { Pool } = require('pg');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Get absolute directory path for Vercel
-const __dirname = path.resolve();
+// Get absolute directory path for Vercel - FIXED
+const __dirname = path.dirname(__filename || '');
 
 // PostgreSQL connection
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  ssl: { rejectUnauthorized: false }
 });
 
 // Test database connection
 pool.connect((err, client, release) => {
   if (err) {
-    console.error('Error acquiring client', err.stack);
+    console.error('Error acquiring client:', err.message);
   } else {
     console.log('Database connected successfully');
-    release();
+    if (release) release();
   }
 });
 
@@ -54,13 +54,13 @@ async function initializeDatabase() {
 
     // Seed initial data if table is empty
     const result = await pool.query('SELECT COUNT(*) FROM messages');
-    if (parseInt(result.rows[0].count) === 0) {
+    if (parseInt(result.rows[0]?.count || 0) === 0) {
       await seedInitialData();
     }
 
     console.log('Database initialized successfully');
   } catch (error) {
-    console.error('Error initializing database:', error);
+    console.error('Error initializing database:', error.message);
   }
 }
 
@@ -108,18 +108,16 @@ async function seedInitialData() {
   console.log('Initial data seeded');
 }
 
-// Middleware - FIXED FOR VERCEL
+// Middleware
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname, 'public'))); // Use absolute path
+app.use(express.static('public')); // Use relative path for Vercel
 app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views')); // Use absolute path
+app.set('views', path.join(__dirname, 'views'));
 
 // Get client IP
 function getClientIp(req) {
   return req.headers['x-forwarded-for']?.split(',')[0] || 
-         req.connection?.remoteAddress || 
-         req.socket?.remoteAddress ||
          req.ip ||
          'unknown';
 }
@@ -136,12 +134,12 @@ app.get('/', async (req, res) => {
     );
 
     res.render('pages/home', { 
-      messages: result.rows,
-      totalReflections: parseInt(totalReflections.rows[0].total) || 0
+      messages: result.rows || [],
+      totalReflections: parseInt(totalReflections.rows[0]?.total || 0, 10)
     });
   } catch (error) {
-    console.error('Error fetching messages:', error);
-    res.status(500).render('pages/home', { 
+    console.error('Error fetching messages:', error.message);
+    res.render('pages/home', { 
       messages: [],
       totalReflections: 0,
       error: 'Failed to load messages'
@@ -161,14 +159,14 @@ app.post('/share', async (req, res) => {
   }
   
   try {
-    const result = await pool.query(
-      'INSERT INTO messages (text, category, author) VALUES ($1, $2, $3) RETURNING *',
+    await pool.query(
+      'INSERT INTO messages (text, category, author) VALUES ($1, $2, $3)',
       [message.trim(), category, author.trim() || 'Anonymous']
     );
     
     res.redirect('/?success=true');
   } catch (error) {
-    console.error('Error saving message:', error);
+    console.error('Error saving message:', error.message);
     res.redirect('/share?error=database');
   }
 });
@@ -178,17 +176,16 @@ app.post('/reflect/:messageId', async (req, res) => {
   const userIp = getClientIp(req);
   
   try {
-    await pool.query('BEGIN');
-    
     const existingReflection = await pool.query(
       'SELECT id FROM reflections WHERE message_id = $1 AND user_ip = $2',
       [messageId, userIp]
     );
     
     if (existingReflection.rows.length > 0) {
-      await pool.query('ROLLBACK');
-      return res.json({ success: false, message: 'Already reflected', count: null });
+      return res.json({ success: false, message: 'Already reflected' });
     }
+    
+    await pool.query('BEGIN');
     
     await pool.query(
       'INSERT INTO reflections (message_id, user_ip) VALUES ($1, $2)',
@@ -196,7 +193,7 @@ app.post('/reflect/:messageId', async (req, res) => {
     );
     
     await pool.query(
-      'UPDATE messages SET reflection_count = reflection_count + 1 WHERE id = $1 RETURNING reflection_count',
+      'UPDATE messages SET reflection_count = reflection_count + 1 WHERE id = $1',
       [messageId]
     );
     
@@ -213,8 +210,8 @@ app.post('/reflect/:messageId', async (req, res) => {
     });
     
   } catch (error) {
-    await pool.query('ROLLBACK');
-    console.error('Error adding reflection:', error);
+    await pool.query('ROLLBACK').catch(() => {});
+    console.error('Error adding reflection:', error.message);
     res.status(500).json({ success: false, error: 'Database error' });
   }
 });
@@ -226,29 +223,32 @@ app.get('/reflections', async (req, res) => {
     );
     
     res.render('pages/reflections', { 
-      messages: result.rows 
+      messages: result.rows || []
     });
   } catch (error) {
-    console.error('Error fetching reflections:', error);
-    res.status(500).render('pages/reflections', { 
+    console.error('Error fetching reflections:', error.message);
+    res.render('pages/reflections', { 
       messages: [],
       error: 'Failed to load reflections'
     });
   }
 });
 
-// Health check
+// Health check endpoint for Vercel
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
+  res.status(200).json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
+  });
 });
 
-// Initialize database and start server
+// Initialize database
 initializeDatabase().then(() => {
-  if (require.main === module) {
-    app.listen(PORT, () => {
-      console.log(`Server running at http://localhost:${PORT}`);
-    });
-  }
+  console.log('Application initialized');
+}).catch(err => {
+  console.error('Failed to initialize application:', err.message);
 });
 
+// Export for Vercel serverless
 module.exports = app;
