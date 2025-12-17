@@ -3,6 +3,7 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { Pool } from 'pg';
+import fs from 'fs';
 
 // ES Module equivalent of __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -10,6 +11,20 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Debug: Show file paths
+console.log('Project root:', __dirname);
+console.log('Public path:', path.join(__dirname, 'public'));
+console.log('CSS path:', path.join(__dirname, 'public', 'css', 'style.css'));
+
+// Check if public directory exists
+const publicPath = path.join(__dirname, 'public');
+const cssPath = path.join(__dirname, 'public', 'css', 'style.css');
+const jsPath = path.join(__dirname, 'public', 'js', 'main.js');
+
+console.log('Public dir exists:', fs.existsSync(publicPath));
+console.log('CSS file exists:', fs.existsSync(cssPath));
+console.log('JS file exists:', fs.existsSync(jsPath));
 
 // PostgreSQL connection
 const pool = new Pool({
@@ -109,12 +124,53 @@ async function seedInitialData() {
   console.log('Initial data seeded');
 }
 
-// Middleware
+// Middleware - FIXED FOR CSS
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-app.use(express.static('public'));
+
+// Serve static files from public directory
+app.use('/css', express.static(path.join(__dirname, 'public', 'css')));
+app.use('/js', express.static(path.join(__dirname, 'public', 'js')));
+app.use(express.static(path.join(__dirname, 'public')));
+
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+
+// Debug route to check static files
+app.get('/debug-static', (req, res) => {
+  const publicExists = fs.existsSync(path.join(__dirname, 'public'));
+  const cssExists = fs.existsSync(path.join(__dirname, 'public', 'css', 'style.css'));
+  const jsExists = fs.existsSync(path.join(__dirname, 'public', 'js', 'main.js'));
+  
+  res.json({
+    success: true,
+    paths: {
+      projectRoot: __dirname,
+      publicDir: path.join(__dirname, 'public'),
+      cssFile: path.join(__dirname, 'public', 'css', 'style.css'),
+      jsFile: path.join(__dirname, 'public', 'js', 'main.js')
+    },
+    filesExist: {
+      publicDir: publicExists,
+      cssFile: cssExists,
+      jsFile: jsExists
+    },
+    urls: {
+      css: '/css/style.css',
+      js: '/js/main.js'
+    }
+  });
+});
+
+// Route to serve CSS directly (for debugging)
+app.get('/test-css', (req, res) => {
+  const cssPath = path.join(__dirname, 'public', 'css', 'style.css');
+  if (fs.existsSync(cssPath)) {
+    res.type('css').send(fs.readFileSync(cssPath, 'utf8'));
+  } else {
+    res.status(404).send('CSS file not found at: ' + cssPath);
+  }
+});
 
 // Get client IP
 function getClientIp(req) {
@@ -136,20 +192,25 @@ app.get('/', async (req, res) => {
 
     res.render('pages/home', { 
       messages: result.rows || [],
-      totalReflections: parseInt(totalReflections.rows[0]?.total || 0, 10)
+      totalReflections: parseInt(totalReflections.rows[0]?.total || 0, 10),
+      // Add CSS check variable for view
+      cssAvailable: fs.existsSync(path.join(__dirname, 'public', 'css', 'style.css'))
     });
   } catch (error) {
     console.error('Error fetching messages:', error.message);
     res.render('pages/home', { 
       messages: [],
       totalReflections: 0,
+      cssAvailable: false,
       error: 'Failed to load messages'
     });
   }
 });
 
 app.get('/share', (req, res) => {
-  res.render('pages/share');
+  res.render('pages/share', { 
+    cssAvailable: fs.existsSync(path.join(__dirname, 'public', 'css', 'style.css'))
+  });
 });
 
 app.post('/share', async (req, res) => {
@@ -224,15 +285,52 @@ app.get('/reflections', async (req, res) => {
     );
     
     res.render('pages/reflections', { 
-      messages: result.rows || []
+      messages: result.rows || [],
+      cssAvailable: fs.existsSync(path.join(__dirname, 'public', 'css', 'style.css'))
     });
   } catch (error) {
     console.error('Error fetching reflections:', error.message);
     res.render('pages/reflections', { 
       messages: [],
+      cssAvailable: false,
       error: 'Failed to load reflections'
     });
   }
+});
+
+// Serve static test page
+app.get('/test', (req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>CSS Test</title>
+      <link rel="stylesheet" href="/css/style.css">
+      <style>
+        body { padding: 20px; font-family: Arial; }
+        .test-box { 
+          padding: 20px; 
+          margin: 10px 0; 
+          border: 2px solid #333;
+          border-radius: 5px;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+      </style>
+    </head>
+    <body>
+      <h1>CSS Test Page</h1>
+      <div class="test-box success">
+        If this box has green background, inline CSS works.
+      </div>
+      <div class="test-box" style="background: var(--accent, #ccc); color: white;">
+        If this box is blue, external CSS (/css/style.css) works.
+      </div>
+      <p>Check console for CSS loading errors.</p>
+      <a href="/">Back to main app</a>
+    </body>
+    </html>
+  `);
 });
 
 // Health check endpoint
@@ -240,13 +338,24 @@ app.get('/health', (req, res) => {
   res.status(200).json({ 
     status: 'OK', 
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
+    cssAvailable: fs.existsSync(path.join(__dirname, 'public', 'css', 'style.css'))
   });
 });
 
 // Initialize database
 initializeDatabase().then(() => {
   console.log('Application initialized');
+  
+  // Check for CSS file
+  const cssExists = fs.existsSync(path.join(__dirname, 'public', 'css', 'style.css'));
+  console.log('CSS file available:', cssExists ? 'YES' : 'NO');
+  
+  if (!cssExists) {
+    console.warn('WARNING: CSS file not found at:', path.join(__dirname, 'public', 'css', 'style.css'));
+    console.warn('Make sure your file structure includes: public/css/style.css');
+  }
+  
 }).catch(err => {
   console.error('Failed to initialize application:', err.message);
 });
@@ -255,6 +364,8 @@ initializeDatabase().then(() => {
 if (process.env.NODE_ENV !== 'production') {
   app.listen(PORT, () => {
     console.log(`Server running at http://localhost:${PORT}`);
+    console.log(`Test CSS at: http://localhost:${PORT}/test`);
+    console.log(`Debug info at: http://localhost:${PORT}/debug-static`);
   });
 }
 
