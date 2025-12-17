@@ -1,14 +1,15 @@
-require('dotenv').config();
-const express = require('express');
-const bodyParser = require('body-parser');
-const path = require('path');
-const { Pool } = require('pg');
+import 'dotenv/config';
+import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { Pool } from 'pg';
+
+// ES Module equivalent of __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-
-// Get absolute directory path for Vercel - FIXED
-const __dirname = path.dirname(__filename || '');
 
 // PostgreSQL connection
 const pool = new Pool({
@@ -109,9 +110,9 @@ async function seedInitialData() {
 }
 
 // Middleware
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
-app.use(express.static('public')); // Use relative path for Vercel
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(express.static('public'));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
@@ -234,7 +235,7 @@ app.get('/reflections', async (req, res) => {
   }
 });
 
-// Health check endpoint for Vercel
+// Health check endpoint
 app.get('/health', (req, res) => {
   res.status(200).json({ 
     status: 'OK', 
@@ -250,5 +251,12 @@ initializeDatabase().then(() => {
   console.error('Failed to initialize application:', err.message);
 });
 
+// Start server for local development
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`Server running at http://localhost:${PORT}`);
+  });
+}
+
 // Export for Vercel serverless
-module.exports = app;
+export default app;
