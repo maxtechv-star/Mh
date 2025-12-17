@@ -7,6 +7,9 @@ const { Pool } = require('pg');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Get absolute directory path for Vercel
+const __dirname = path.resolve();
+
 // PostgreSQL connection
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -38,7 +41,7 @@ async function initializeDatabase() {
       )
     `);
 
-    // Create reflections table (to track who reflected on what)
+    // Create reflections table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS reflections (
         id SERIAL PRIMARY KEY,
@@ -105,14 +108,14 @@ async function seedInitialData() {
   console.log('Initial data seeded');
 }
 
-// Middleware
+// Middleware - FIXED FOR VERCEL
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, 'public'))); // Use absolute path
 app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
+app.set('views', path.join(__dirname, 'views')); // Use absolute path
 
-// Get client IP (for reflection tracking)
+// Get client IP
 function getClientIp(req) {
   return req.headers['x-forwarded-for']?.split(',')[0] || 
          req.connection?.remoteAddress || 
@@ -175,10 +178,8 @@ app.post('/reflect/:messageId', async (req, res) => {
   const userIp = getClientIp(req);
   
   try {
-    // Start transaction
     await pool.query('BEGIN');
     
-    // Check if user already reflected on this message
     const existingReflection = await pool.query(
       'SELECT id FROM reflections WHERE message_id = $1 AND user_ip = $2',
       [messageId, userIp]
@@ -189,13 +190,11 @@ app.post('/reflect/:messageId', async (req, res) => {
       return res.json({ success: false, message: 'Already reflected', count: null });
     }
     
-    // Add reflection record
     await pool.query(
       'INSERT INTO reflections (message_id, user_ip) VALUES ($1, $2)',
       [messageId, userIp]
     );
     
-    // Update message reflection count
     await pool.query(
       'UPDATE messages SET reflection_count = reflection_count + 1 WHERE id = $1 RETURNING reflection_count',
       [messageId]
@@ -203,7 +202,6 @@ app.post('/reflect/:messageId', async (req, res) => {
     
     await pool.query('COMMIT');
     
-    // Get updated count
     const result = await pool.query(
       'SELECT reflection_count FROM messages WHERE id = $1',
       [messageId]
@@ -239,26 +237,7 @@ app.get('/reflections', async (req, res) => {
   }
 });
 
-// Stats endpoint (for future use)
-app.get('/api/stats', async (req, res) => {
-  try {
-    const totalMessages = await pool.query('SELECT COUNT(*) FROM messages');
-    const totalReflections = await pool.query('SELECT SUM(reflection_count) FROM messages');
-    const topCategories = await pool.query(
-      'SELECT category, COUNT(*) as count FROM messages GROUP BY category ORDER BY count DESC LIMIT 5'
-    );
-    
-    res.json({
-      totalMessages: parseInt(totalMessages.rows[0].count),
-      totalReflections: parseInt(totalReflections.rows[0].sum) || 0,
-      topCategories: topCategories.rows
-    });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch stats' });
-  }
-});
-
-// Health check endpoint for Vercel
+// Health check
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
 });
