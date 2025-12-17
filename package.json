@@ -1,0 +1,21 @@
+{
+  "name": "honest-voices",
+  "version": "1.0.0",
+  "description": "A platform for honest messages and reflection",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "ejs": "^3.1.9",
+    "dotenv": "^16.0.3",
+    "body-parser": "^1.20.2",
+    "pg": "^8.11.3",
+    "pg-hstore": "^2.3.4"
+  },
+  "engines": {
+    "node": "18.x"
+  }
+}

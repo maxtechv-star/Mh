@@ -1,0 +1,130 @@
+<% const currentPage = 'share'; %>
+<% const title = 'Share Your Truth | Reflection Well'; %>
+
+<div class="form-container">
+    <h2>Share an Honest Message</h2>
+    <p class="subtitle">What's true for you right now? Share a vulnerable thought, a lesson learned, or something you're grateful for.</p>
+    
+    <% if (typeof error !== 'undefined') { %>
+        <div class="error-message">
+            <p>Please write a message before sharing.</p>
+        </div>
+    <% } %>
+    
+    <% if (typeof success !== 'undefined') { %>
+        <div class="success-message">
+            <p>Thank you for sharing your truth. Your message is now live.</p>
+        </div>
+    <% } %>
+    
+    <form action="/share" method="POST">
+        <div class="form-group">
+            <label for="message">Your Message *</label>
+            <textarea 
+                id="message" 
+                name="message" 
+                placeholder="Speak from the heart. This can be a challenge you're facing, something you've learned, gratitude, or an honest observation..." 
+                required></textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="category">Category</label>
+            <select id="category" name="category">
+                <option value="Honest Message">Honest Message</option>
+                <option value="Personal Growth">Personal Growth</option>
+                <option value="Vulnerability">Vulnerability</option>
+                <option value="Gratitude">Gratitude</option>
+                <option value="Challenge">Challenge</option>
+                <option value="Hope">Hope</option>
+                <option value="Question to Ponder">Question to Ponder</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="author">Your Name (Optional)</label>
+            <input 
+                type="text" 
+                id="author" 
+                name="author" 
+                placeholder="Anonymous, First Name, or Initials">
+            <p class="form-hint">Leave blank to remain anonymous</p>
+        </div>
+        
+        <div class="guidelines">
+            <h4>Community Guidelines:</h4>
+            <ul>
+                <li>Speak your truth with kindness</li>
+                <li>No hate speech, harassment, or discrimination</li>
+                <li>Respect others' experiences</li>
+                <li>Assume positive intent</li>
+                <li>This is a space for growth, not debate</li>
+            </ul>
+        </div>
+        
+        <button type="submit" class="btn-primary">Share Your Message</button>
+        <a href="/" class="btn-secondary">Cancel</a>
+    </form>
+</div>
+
+<style>
+    .subtitle {
+        color: var(--muted);
+        margin-bottom: 2rem;
+        font-size: 1.1rem;
+    }
+    
+    .error-message {
+        background: #ffe6e6;
+        border-left: 4px solid #ff6b6b;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        border-radius: var(--radius);
+        color: #d32f2f;
+    }
+    
+    .success-message {
+        background: #e6ffe6;
+        border-left: 4px solid #4caf50;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        border-radius: var(--radius);
+        color: #2e7d32;
+    }
+    
+    .form-hint {
+        font-size: 0.85rem;
+        color: var(--muted);
+        margin-top: 0.25rem;
+    }
+    
+    .guidelines {
+        background: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: var(--radius);
+        margin: 2rem 0;
+    }
+    
+    .guidelines h4 {
+        margin-bottom: 0.75rem;
+        color: var(--text);
+    }
+    
+    .guidelines ul {
+        list-style-type: none;
+        padding-left: 0;
+    }
+    
+    .guidelines li {
+        padding: 0.25rem 0;
+        color: var(--muted);
+        position: relative;
+        padding-left: 1.5rem;
+    }
+    
+    .guidelines li:before {
+        content: "✓";
+        position: absolute;
+        left: 0;
+        color: var(--accent);
+    }
+</style>

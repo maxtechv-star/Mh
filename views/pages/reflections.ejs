@@ -1,0 +1,142 @@
+<% const currentPage = 'reflections'; %>
+<% const title = 'Most Reflective Messages | Reflection Well'; %>
+
+<div class="page-header">
+    <h2>Messages That Sparked Reflection</h2>
+    <p class="subtitle">These are the messages that resonated most deeply with our community.</p>
+</div>
+
+<div class="stats-bar">
+    <div class="stat">
+        <span class="stat-number"><%= messages.length %></span>
+        <span class="stat-label">Messages</span>
+    </div>
+    <div class="stat">
+        <span class="stat-number"><%= messages.reduce((sum, msg) => sum + (msg.reflections || 0), 0) %></span>
+        <span class="stat-label">Total Reflections</span>
+    </div>
+</div>
+
+<div class="messages-container">
+    <% if (messages.length === 0) { %>
+        <div class="empty-state">
+            <p>No reflections yet. Be the first to reflect on a message.</p>
+            <a href="/" class="btn-secondary">Browse Messages</a>
+        </div>
+    <% } else { %>
+        <% messages.forEach((message, index) => { %>
+            <div class="message-card" data-id="<%= message.id %>">
+                <% if (index < 3) { %>
+                    <div class="top-badge">
+                        <span class="badge-icon">🏆</span>
+                        <span>Top <%= index + 1 %></span>
+                    </div>
+                <% } %>
+                
+                <div class="message-header">
+                    <div class="reflection-count-large">
+                        <span class="reflection-number"><%= message.reflections || 0 %></span>
+                        <span class="reflection-label">Reflections</span>
+                    </div>
+                    <span class="message-category"><%= message.category %></span>
+                </div>
+                
+                <div class="message-content">
+                    <p><%= message.text %></p>
+                </div>
+                
+                <div class="message-footer">
+                    <span class="message-author">— <%= message.author %></span>
+                    <span class="message-time">
+                        <%= new Date(message.timestamp).toLocaleDateString('en-US', { 
+                            month: 'long', 
+                            day: 'numeric',
+                            year: 'numeric'
+                        }) %>
+                    </span>
+                </div>
+            </div>
+        <% }); %>
+    <% } %>
+</div>
+
+<style>
+    .page-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    
+    .stats-bar {
+        display: flex;
+        justify-content: center;
+        gap: 3rem;
+        margin: 2rem 0;
+        padding: 1.5rem;
+        background: white;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+    }
+    
+    .reflection-count-large {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background: var(--accent-light);
+        padding: 0.75rem;
+        border-radius: var(--radius);
+        min-width: 80px;
+    }
+    
+    .reflection-number {
+        font-size: 2rem;
+        font-weight: 600;
+        color: var(--accent);
+        line-height: 1;
+    }
+    
+    .reflection-label {
+        font-size: 0.8rem;
+        color: var(--muted);
+        text-align: center;
+    }
+    
+    .message-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    
+    .top-badge {
+        position: absolute;
+        top: -10px;
+        right: 20px;
+        background: #ffd700;
+        color: #333;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .badge-icon {
+        font-size: 1rem;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        background: white;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+    }
+    
+    .empty-state p {
+        margin-bottom: 1.5rem;
+        color: var(--muted);
+    }
+</style>

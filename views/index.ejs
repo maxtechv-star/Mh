@@ -1,0 +1,135 @@
+<%- include('partials/header', { title: name, description: description }) %>
+
+<!-- HERO -->
+<section class="text-left mb-8">
+  <p class="text-slate-800 dark:text-slate-300 text-xs mb-3">Hi Visitor! Welcome To</p>
+
+  <h1 class="flex flex-wrap items-center gap-2 text-3xl md:text-4xl font-extrabold">
+    <span class="flex-grow tracking-tight"><%= name %></span>
+    <span class="inline-flex items-center rounded-xl px-3 py-1 text-[10px] font-extrabold text-white
+                 bg-gradient-to-r from-cyan-500 via-indigo-500 to-violet-600">v<%= version %></span>
+  </h1>
+
+  <p class="text-slate-600 dark:text-slate-300 text-sm mt-3 max-w-2xl"><%= description %></p>
+
+  <% if (links && links.length > 0) { %>
+    <div class="mt-5 grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      <% links.forEach(function(link){ %>
+        <a href="<%= link.url %>" target="_blank"
+           class="rounded-2xl border border-slate-200/70 bg-white/80 p-4 shadow
+                  hover:shadow-md transition dark:bg-slate-800/60 dark:border-slate-700 group">
+          <div class="flex items-center gap-3">
+            <div class="h-9 w-9 rounded-xl grid place-items-center bg-slate-900 text-white/90 dark:bg-slate-700 group-hover:scale-105 transition">
+              <span class="material-icons-outlined">link</span>
+            </div>
+            <div class="flex-1">
+              <h3 class="font-semibold group-hover:text-cyan-700 dark:group-hover:text-cyan-300 transition"><%= link.title %></h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-1"><%= link.subtitle || 'external link' %></p>
+            </div>
+            <span class="material-icons-outlined opacity-40 group-hover:opacity-80 transition">north_east</span>
+          </div>
+        </a>
+      <% }) %>
+    </div>
+  <% } %>
+
+  <div class="mt-5 flex gap-3">
+    <a href="#categories" class="gbtn">
+      <span class="material-icons-outlined text-[14px]">explore</span> Explore Categories
+    </a>
+  </div>
+</section>
+
+<!-- STATUS (optional) -->
+<% if (typeof current_status !== 'undefined') { %>
+  <% if (current_status === 'maintenance') { %>
+    <div class="rounded-2xl border border-yellow-200 bg-yellow-50/80 p-4 mb-5 dark:bg-yellow-100/10 dark:border-yellow-500/40">
+      <div class="flex items-start">
+        <span class="material-icons-outlined text-yellow-600 dark:text-yellow-400 text-lg mr-3">warning</span>
+        <div>
+          <div class="font-bold text-sm text-yellow-800 dark:text-yellow-300 mb-1">System Maintenance</div>
+          <div class="text-xs text-yellow-700 dark:text-yellow-200/80">Some endpoints may be delayed or unavailable.</div>
+        </div>
+      </div>
+    </div>
+  <% } else if (current_status === 'error') { %>
+    <div class="rounded-2xl border border-red-200 bg-red-50/80 p-4 mb-5 dark:bg-red-100/10 dark:border-red-500/40">
+      <div class="flex items-start">
+        <span class="material-icons-outlined text-red-600 dark:text-red-400 text-lg mr-3">error</span>
+        <div>
+          <div class="font-bold text-sm text-red-800 dark:text-red-300 mb-1">Service Error</div>
+          <div class="text-xs text-red-700 dark:text-red-200/80">Most endpoints are unavailable at this time.</div>
+        </div>
+      </div>
+    </div>
+  <% } %>
+<% } %>
+
+<!-- STATS -->
+<section class="grid grid-cols-2 gap-4 my-5">
+  <div class="rounded-2xl border border-slate-200/70 bg-white/80 p-4 text-center shadow
+              dark:bg-slate-800/60 dark:border-slate-700">
+    <div class="text-lg font-bold">
+      <% if (endpoints && endpoints.length > 0) { %>
+        <%= endpoints.reduce((total, cat) => total + cat.items.length, 0) %>
+      <% } else { %>0<% } %>
+    </div>
+    <div class="text-xs text-slate-600 dark:text-slate-300">Total Endpoints</div>
+  </div>
+
+  <div class="rounded-2xl border border-slate-200/70 bg-white/80 p-4 text-center shadow
+              dark:bg-slate-800/60 dark:border-slate-700">
+    <div class="text-lg font-bold">
+      <% if (endpoints && endpoints.length > 0) { %>
+        <%= endpoints.length %>
+      <% } else { %>0<% } %>
+    </div>
+    <div class="text-xs text-slate-600 dark:text-slate-300">Categories</div>
+  </div>
+</section>
+
+<!-- CATEGORIES -->
+<section id="categories" class="space-y-3">
+  <% if (endpoints && endpoints.length > 0) { %>
+    <% endpoints.forEach((category) => { %>
+      <%
+        const categorySlug = category.name.toLowerCase()
+          .replace(/[^a-z0-9\s-]/g, '')
+          .replace(/\s+/g, '-')
+          .trim();
+        const categoryConfig = categories[categorySlug] || {};
+        const categoryType = categoryConfig.type || 'application/json';
+        const categoryDesc = categoryConfig.description || '-';
+      %>
+      <a href="/category/<%= categorySlug %>" class="block">
+        <div class="rounded-2xl border border-slate-200/70 bg-white/80 p-4 shadow
+                    hover:shadow-md transition dark:bg-slate-800/60 dark:border-slate-700 group">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center min-w-0 flex-1">
+              <span class="material-icons-outlined text-white bg-slate-900 dark:bg-slate-700 py-1 px-2 rounded-lg mr-4">folder</span>
+              <div class="flex flex-col min-w-0 flex-1">
+                <div class="flex items-center gap-2 mb-1">
+                  <h3 class="font-semibold text-sm truncate group-hover:text-cyan-700 dark:group-hover:text-cyan-300 transition"><%= category.name %></h3>
+                  <span class="text-[10px] font-bold text-slate-400">( <%= category.items.length %> )</span>
+                </div>
+                <p class="text-xs text-slate-500 dark:text-slate-400"><%= categoryType %></p>
+                <% if (categoryDesc && categoryDesc !== '-') { %>
+                  <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1 line-clamp-1"><%= categoryDesc %></p>
+                <% } %>
+              </div>
+            </div>
+            <span class="material-icons-outlined text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition">chevron_right</span>
+          </div>
+        </div>
+      </a>
+    <% }) %>
+  <% } else { %>
+    <div class="rounded-2xl border border-slate-200/70 bg-white/80 p-14 text-center shadow
+                dark:bg-slate-800/60 dark:border-slate-700">
+      <span class="material-icons-outlined text-slate-400 text-5xl mb-3">api</span>
+      <h3 class="text-sm text-slate-700 dark:text-slate-300">No API categories available yet.</h3>
+    </div>
+  <% } %>
+</section>
+
+<%- include('partials/footer', { name }) %>

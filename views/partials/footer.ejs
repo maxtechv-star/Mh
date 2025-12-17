@@ -1,0 +1,33 @@
+<footer>
+    <div class="footer-content">
+        <div class="footer-links">
+            <a href="/" class="footer-link">Home</a>
+            <a href="/share" class="footer-link">Share</a>
+            <a href="/reflections" class="footer-link">Reflections</a>
+            <span class="footer-separator">•</span>
+            <a href="#" class="footer-link" id="guidelines-link">Guidelines</a>
+            <a href="#" class="footer-link" id="about-link">About</a>
+        </div>
+        
+        <p class="footer-tagline">Reflection Well — A space for honest voices and personal growth.</p>
+        
+        <p class="footer-note">
+            Built with intention. Version 1.0. 
+            <br>
+            <small>Messages are stored temporarily for demonstration. In a full version, consider a proper database.</small>
+        </p>
+    </div>
+</footer>
+
+<script>
+    // Simple modal for guidelines and about
+    document.getElementById('guidelines-link')?.addEventListener('click', function(e) {
+        e.preventDefault();
+        alert(`Community Guidelines:\n\n1. Speak your truth with kindness\n2. Listen with an open heart\n3. Respect all experiences\n4. No hate speech or harassment\n5. This is a growth space, not a debate platform\n\nWe're building trust together.`);
+    });
+    
+    document.getElementById('about-link')?.addEventListener('click', function(e) {
+        e.preventDefault();
+        alert(`About Reflection Well:\n\nA platform to share honest messages, provoke reflection, inspire personal growth, and build community.\n\nThis is Version 1.0 - more features coming slowly as the community grows.\n\nAll voices matter here.`);
+    });
+</script>

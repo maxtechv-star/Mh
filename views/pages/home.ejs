@@ -1,0 +1,70 @@
+<% const currentPage = 'home'; %>
+<% const title = 'Reflection Well | Honest Voices'; %>
+
+<div class="hero">
+    <h2>Welcome to a space for honest voices</h2>
+    <p>Share what's true for you. Read what's true for others. Grow together.</p>
+    <a href="/share" class="btn-primary">Share Your Message</a>
+</div>
+
+<div class="stats">
+    <div class="stat">
+        <span class="stat-number"><%= messages.length %></span>
+        <span class="stat-label">Messages Shared</span>
+    </div>
+    <div class="stat">
+        <span class="stat-number"><%= totalReflections %></span>
+        <span class="stat-label">Total Reflections</span>
+    </div>
+</div>
+
+<div class="messages-container">
+    <h3>Recent Honest Messages</h3>
+    
+    <% if (messages.length === 0) { %>
+        <div class="empty-state">
+            <p>No messages yet. Be the first to share an honest reflection.</p>
+            <a href="/share" class="btn-secondary">Share First Message</a>
+        </div>
+    <% } else { %>
+        <% messages.forEach(message => { %>
+            <div class="message-card" data-id="<%= message.id %>">
+                <div class="message-header">
+                    <span class="message-category"><%= message.category %></span>
+                    <span class="message-time">
+                        <%= new Date(message.timestamp).toLocaleDateString('en-US', { 
+                            month: 'short', 
+                            day: 'numeric' 
+                        }) %>
+                    </span>
+                </div>
+                
+                <div class="message-content">
+                    <p><%= message.text %></p>
+                </div>
+                
+                <div class="message-footer">
+                    <span class="message-author">— <%= message.author %></span>
+                    
+                    <button class="reflect-btn" data-id="<%= message.id %>">
+                        <span class="reflect-icon">💭</span>
+                        <span class="reflect-count"><%= message.reflectionCount || 0 %></span>
+                        <span class="reflect-text">This made me reflect</span>
+                    </button>
+                </div>
+            </div>
+        <% }); %>
+    <% } %>
+</div>
+
+<div class="categories">
+    <h4>Share messages about:</h4>
+    <div class="category-tags">
+        <span class="category-tag">Honest Truth</span>
+        <span class="category-tag">Personal Growth</span>
+        <span class="category-tag">Vulnerability</span>
+        <span class="category-tag">Gratitude</span>
+        <span class="category-tag">Challenge</span>
+        <span class="category-tag">Hope</span>
+    </div>
+</div>
